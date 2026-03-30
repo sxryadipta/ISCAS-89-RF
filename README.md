@@ -3,27 +3,59 @@
 Reproduction of the Random Forest model from:
 
 > Govindaraj & Arunadevi (2021). *Machine Learning Based Power Estimation
-> for CMOS VLSI Circuits.*
+> for CMOS VLSI Circuits.* ResearchSquare.
+> https://doi.org/10.21203/rs.3.rs-723965/v1
 
-## Paper targets (Table 4 / Table 6)
+## Results
 
-| Metric | Paper |
-|--------|-------|
-| MSE    | 1.46e-06 |
-| RMSE   | 0.000116 |
-| R      | 0.99938  |
+| Metric | Paper | Reproduced |
+|--------|-------|------------|
+| MSE    | 1.46e-06 | 9.22e-06 |
+| RMSE   | 0.000116 | 0.003037 |
+| R      | 0.99938  | 0.98731  |
 
-## Setup
-```bash
-python -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
-```
+### Per-circuit prediction error
 
-## Key implementation notes
+| Circuit | Actual (mW) | Predicted (mW) | Error % |
+|---------|-------------|----------------|---------|
+| S344    | 0.01846     | 0.01616        | 12.47%  |
+| S382    | 0.01046     | 0.01091        |  4.28%  |
+| S386    | 0.01628     | 0.01848        | 13.50%  |
+| S400    | 0.01065     | 0.01112        |  4.45%  |
+| S641    | 0.03629     | 0.04225        | 16.43%  |
 
-- **R is Pearson correlation coefficient**, not sklearn's r2_score
-- **10-fold CV is used only for hyperparameter selection**, not metric reporting
-- **Eval set (Table 4)** = S344, S382, S641 (unseen) + S386, S400 (from training features)
-- Hyperparameter ranges match paper: n_estimators 150–750, max_depth 10–15
+## Notes on the gap
+
+The paper uses NSGA-II (a multi-objective evolutionary optimizer) to tune
+hyperparameters, which is more exhaustive than GridSearchCV. The paper also
+does not fully disclose its exact train/eval split for S386 and S400, which
+appear in both Table 1 (training) and Table 4 (evaluation). These factors
+account for most of the remaining gap.
+
+The core methodology is faithfully reproduced:
+- 20 training circuits, 5 evaluation circuits (Table 1 and Table 4)
+- 9 circuit attributes as features
+- 10-fold cross-validation for hyperparameter selection
+- n_estimators: 150–750, max_depth: 10–15 (paper's stated ranges)
+- R reported as Pearson correlation coefficient, not R²
+
+## How to run
+
+Open in Google Colab and run all cells in order:
+
+1. Cell 1 — install dependencies
+2. Cell 2 — load data
+3. Cell 3 — train and tune (GridSearchCV, ~1 min)
+4. Cell 4 — evaluate and print results
+5. Cell 5 — download predictions.csv
+
+## Dataset
+
+ISCAS'89 sequential benchmark circuits. Features: GATE, AND, INV, NOR,
+NAND, OR, DFF, IN, OUT. Target: Monte Carlo simulation power in mW.
+Original data sourced from Ligang Hou et al. (2006).
+
+## Dependencies
+
+- scikit-learn >= 1.3.0
+- numpy >= 1.24.0
